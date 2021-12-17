@@ -86,17 +86,58 @@ class Graph:
         path.reverse()
         return path
 
+    def a_star_search(self, start=None, goal=None):
+        def heuristic(a, b) -> float:
+            (x1, y1) = a
+            (x2, y2) = b
+            return abs(x1 - x2) + abs(y1 - y2)
+
+        start = (0, 0) if start is None else start
+        goal = (len(self.grid[0])-1, len(self.grid)-1) if goal is None else goal
+        frontier = PriorityQueue()
+        frontier.put(start, 0)
+        came_from = {}
+        cost_so_far = {}
+        came_from[start] = None
+        cost_so_far[start] = 0
+
+        while not frontier.empty():
+            current = frontier.pop()
+            if current == goal:
+                break
+            for next in self.get_neighbors(current):
+                x, y = next
+                new_cost = cost_so_far[current] + self.grid[y][x]
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    priority = new_cost + heuristic(next, goal)
+                    frontier.put(next, priority)
+                    came_from[next] = current
+
+        # return came_from, cost_so_far
+        # reconstruct the path
+        current = goal
+        path = []
+        while current != start:
+            path.append(current)
+            current = came_from[current]
+        path.append(start)
+        path.reverse()
+        return path
+
 
 if __name__ == "__main__":
     with open("input.txt") as f:
         g = Graph(f.read())
-        w, h = len(g.grid[0]), len(g.grid)
+
+        def sum_path(g, p):
+            return sum(g[y][x] if (x, y) != (0, 0) else 0 for x, y in p)
 
         # part one
         path = g.shortest_path()
-        print(sum(g.grid[y][x] if (x, y) != (0, 0) else 0 for x, y in path))
+        print(sum_path(g.grid, path))
 
         # part two
         g.expand_full_board()
         path = g.shortest_path()
-        print(sum(g.grid[y][x] if (x, y) != (0, 0) else 0 for x, y in path))
+        print(sum_path(g.grid, path))
